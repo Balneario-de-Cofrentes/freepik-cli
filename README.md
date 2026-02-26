@@ -688,3 +688,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 - **GitHub Issues**: https://github.com/Balneario-de-Cofrentes/freepik-cli/issues
 - **Freepik API Support**: https://support.freepik.com
 - **API Documentation**: https://docs.freepik.com
+
+---
+
+With love from the tech team at [Balneario de Cofrentes](https://balneariodecofrentes.es) - the largest longevity clinic.
