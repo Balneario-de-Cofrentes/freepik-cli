@@ -1,13 +1,9 @@
 import { Command } from 'commander';
-import { globals } from '../lib/globals.js';
-import { post } from '../lib/api.js';
-import { pollTask } from '../lib/poll.js';
-import { downloadGenerated } from '../lib/download.js';
 import { getImageValue } from '../lib/image-input.js';
 import { ENDPOINTS } from '../lib/models.js';
-import { openFile } from '../lib/open.js';
-import { info, error, printJson, c } from '../lib/output.js';
-import type { UpscaleOptions, TaskCreateResponse } from '../types.js';
+import { runAsyncTask } from '../lib/run-task.js';
+import { error, c } from '../lib/output.js';
+import type { UpscaleOptions } from '../types.js';
 
 const SCALE_MAP: Record<string, number> = {
   '2x': 2,
@@ -54,8 +50,6 @@ Examples:
           );
         }
 
-        info(`Upscaling image (${c.bold}${opts.scale}${c.reset})...`);
-
         const imageValue = await getImageValue(image);
         const body: Record<string, unknown> = {
           image: imageValue,
@@ -69,36 +63,12 @@ Examples:
         if (opts.prompt) body.prompt = opts.prompt;
         if (opts.engine) body.engine = opts.engine;
 
-        const ep = ENDPOINTS.upscale;
-        const res = await post<TaskCreateResponse>(ep.post, body);
-
-        if (globals.json) {
-          printJson(res);
-          return;
-        }
-
-        const taskId = res.data.task_id;
-        info(`Task created: ${taskId}`);
-
-        if (!opts.download) {
-          info(
-            `Check status with: freepik status ${taskId} --endpoint ${ep.get}`,
-          );
-          return;
-        }
-
-        const result = await pollTask(ep.get, taskId, { silent: globals.json });
-
-        if (globals.json) {
-          printJson(result.raw);
-          return;
-        }
-
-        const paths = await downloadGenerated(result.generated, opts.output, globals.verbose);
-
-        if (opts.open && paths.length > 0) {
-          openFile(paths[0]);
-        }
+        await runAsyncTask(ENDPOINTS.upscale, body, {
+          download: opts.download,
+          output: opts.output,
+          open: opts.open,
+          label: `Upscaling image (${c.bold}${opts.scale}${c.reset})...`,
+        });
       } catch (err) {
         error((err as Error).message);
         process.exit(1);

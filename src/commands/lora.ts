@@ -20,6 +20,49 @@ interface LoraListResponse {
   [key: string]: unknown;
 }
 
+interface TrainLoraConfig {
+  type: 'character' | 'style';
+  endpoint: string;
+  buildBody: (name: string, images: string[], opts: LoraTrainOptions) => Record<string, unknown>;
+}
+
+async function trainLora(
+  name: string,
+  opts: LoraTrainOptions,
+  config: TrainLoraConfig,
+): Promise<void> {
+  const imagePaths = opts.images.split(',').map((s) => s.trim()).filter(Boolean);
+
+  if (imagePaths.length < 8 || imagePaths.length > 20) {
+    throw new Error(
+      `${config.type === 'character' ? 'Character' : 'Style'} LoRA requires 8-20 images, got ${imagePaths.length}`,
+    );
+  }
+
+  info(`Training ${config.type} LoRA "${name}" with ${imagePaths.length} images...`);
+
+  const images: string[] = [];
+  for (const imgPath of imagePaths) {
+    images.push(await getImageValue(imgPath));
+  }
+
+  const body = config.buildBody(name, images, opts);
+
+  const res = await post<Record<string, unknown>>(config.endpoint, body);
+
+  if (globals.json) {
+    printJson(res);
+    return;
+  }
+
+  success(`${config.type === 'character' ? 'LoRA' : 'Style LoRA'} training started for "${name}"`);
+  const data = res.data as Record<string, unknown> | undefined;
+  if (data?.id) {
+    info(`LoRA ID: ${data.id}`);
+  }
+  info('Training may take several minutes. Check status with: freepik lora list');
+}
+
 export function registerLoraCommand(program: Command): void {
   const loraCmd = program
     .command('lora')
@@ -96,46 +139,20 @@ Examples:
     .option('--description <text>', 'Description of the character')
     .action(async (name: string, opts: LoraTrainOptions) => {
       try {
-        const imagePaths = opts.images.split(',').map((s) => s.trim()).filter(Boolean);
-
-        if (imagePaths.length < 8 || imagePaths.length > 20) {
-          throw new Error(
-            `Character LoRA requires 8-20 images, got ${imagePaths.length}`,
-          );
-        }
-
-        info(`Training character LoRA "${name}" with ${imagePaths.length} images...`);
-
-        // Process all images
-        const images: string[] = [];
-        for (const imgPath of imagePaths) {
-          images.push(await getImageValue(imgPath));
-        }
-
-        const body: Record<string, unknown> = {
-          name,
-          images,
-          quality: opts.quality ?? 'high',
-          gender: opts.gender ?? 'neutral',
-        };
-        if (opts.description) body.description = opts.description;
-
-        const res = await post<Record<string, unknown>>(
-          ENDPOINTS.loras.trainCharacter,
-          body,
-        );
-
-        if (globals.json) {
-          printJson(res);
-          return;
-        }
-
-        success(`LoRA training started for "${name}"`);
-        const data = res.data as Record<string, unknown> | undefined;
-        if (data?.id) {
-          info(`LoRA ID: ${data.id}`);
-        }
-        info('Training may take several minutes. Check status with: freepik lora list');
+        await trainLora(name, opts, {
+          type: 'character',
+          endpoint: ENDPOINTS.loras.trainCharacter,
+          buildBody: (n, images, o) => {
+            const body: Record<string, unknown> = {
+              name: n,
+              images,
+              quality: o.quality ?? 'high',
+              gender: o.gender ?? 'neutral',
+            };
+            if (o.description) body.description = o.description;
+            return body;
+          },
+        });
       } catch (err) {
         error((err as Error).message);
         process.exit(1);
@@ -152,44 +169,19 @@ Examples:
     .option('--description <text>', 'Description of the style')
     .action(async (name: string, opts: LoraTrainOptions) => {
       try {
-        const imagePaths = opts.images.split(',').map((s) => s.trim()).filter(Boolean);
-
-        if (imagePaths.length < 8 || imagePaths.length > 20) {
-          throw new Error(
-            `Style LoRA requires 8-20 images, got ${imagePaths.length}`,
-          );
-        }
-
-        info(`Training style LoRA "${name}" with ${imagePaths.length} images...`);
-
-        const images: string[] = [];
-        for (const imgPath of imagePaths) {
-          images.push(await getImageValue(imgPath));
-        }
-
-        const body: Record<string, unknown> = {
-          name,
-          images,
-          quality: opts.quality ?? 'high',
-        };
-        if (opts.description) body.description = opts.description;
-
-        const res = await post<Record<string, unknown>>(
-          ENDPOINTS.loras.trainStyle,
-          body,
-        );
-
-        if (globals.json) {
-          printJson(res);
-          return;
-        }
-
-        success(`Style LoRA training started for "${name}"`);
-        const data = res.data as Record<string, unknown> | undefined;
-        if (data?.id) {
-          info(`LoRA ID: ${data.id}`);
-        }
-        info('Training may take several minutes. Check status with: freepik lora list');
+        await trainLora(name, opts, {
+          type: 'style',
+          endpoint: ENDPOINTS.loras.trainStyle,
+          buildBody: (n, images, o) => {
+            const body: Record<string, unknown> = {
+              name: n,
+              images,
+              quality: o.quality ?? 'high',
+            };
+            if (o.description) body.description = o.description;
+            return body;
+          },
+        });
       } catch (err) {
         error((err as Error).message);
         process.exit(1);

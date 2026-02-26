@@ -3,10 +3,10 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { CliConfig } from '../types.js';
 
-const CONFIG_DIR = join(homedir(), '.config', 'freepik-cli');
+export const CONFIG_DIR = join(homedir(), '.config', 'freepik-cli');
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
 
-async function ensureConfigDir(): Promise<void> {
+export async function ensureConfigDir(): Promise<void> {
   await mkdir(CONFIG_DIR, { recursive: true });
 }
 

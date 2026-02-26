@@ -9,6 +9,7 @@ import { openFile } from '../lib/open.js';
 import { expandTemplate } from '../lib/templates.js';
 import { appendHistory } from '../lib/history.js';
 import { info, error, warn, printJson, c } from '../lib/output.js';
+import { loadConfig } from '../lib/config.js';
 import type { GenerateOptions, TaskCreateResponse } from '../types.js';
 
 // ── Smart model selection ──────────────────────────────────────────
@@ -250,6 +251,14 @@ Free models (no cost):  flux-2-turbo (default), flux-2-klein, hyperflux, flux-de
 Premium models:         mystic (best quality), flux-2-pro, flux-kontext, flux-pro-1.1, runway`)
     .action(async (prompt: string | undefined, opts: GenerateOptions) => {
       try {
+        // Load default model from config if user didn't explicitly pass -m/--model
+        if (!process.argv.includes('-m') && !process.argv.includes('--model')) {
+          const config = await loadConfig();
+          if (config.defaultModel) {
+            opts.model = config.defaultModel;
+          }
+        }
+
         let effectivePrompt = prompt ?? '';
 
         // Template expansion
@@ -283,80 +292,25 @@ Premium models:         mystic (best quality), flux-2-pro, flux-kontext, flux-pr
 
         // ── Single generation ────────────────────────────────────
         if (count === 1) {
-          const model = getGenerateModel(modelName);
-          const body =
-            modelName === 'mystic'
-              ? buildMysticBody(effectivePrompt, opts)
-              : buildFluxBody(effectivePrompt, opts, modelName);
-
-          const res = await post<TaskCreateResponse>(model.post, body);
-
           if (globals.json) {
+            // For JSON mode, do the manual post for raw response
+            const model = getGenerateModel(modelName);
+            const body =
+              modelName === 'mystic'
+                ? buildMysticBody(effectivePrompt, opts)
+                : buildFluxBody(effectivePrompt, opts, modelName);
+            const res = await post<TaskCreateResponse>(model.post, body);
             printJson(res);
             return;
           }
 
-          const taskId = res.data.task_id;
-          info(`Task created: ${taskId}`);
-
-          // Handle cached result
-          if (res.data.status === 'COMPLETED') {
-            info('Result was cached, no polling needed');
-            const rawGenerated = (res.data as Record<string, unknown>).generated as
-              | Array<string | { url: string; content_type?: string }>
-              | undefined;
-            if (rawGenerated && opts.download !== false) {
-              const generated = rawGenerated.map((item) =>
-                typeof item === 'string' ? { url: item } : item,
-              );
-              const paths = await downloadGenerated(generated, opts.output, globals.verbose);
-
-              appendHistory({
-                timestamp: new Date().toISOString(),
-                command: 'generate',
-                model: modelName,
-                prompt: effectivePrompt,
-                seed: opts.seed ? Number(opts.seed) : undefined,
-                taskId,
-                outputPath: paths[0],
-              }).catch(() => {});
-
-              if (opts.open && paths.length > 0) {
-                openFile(paths[0]);
-              }
-            }
-            return;
-          }
-
-          if (!opts.download) {
-            info(`Task ID: ${taskId}`);
-            info(
-              `Check status with: freepik status ${taskId} --endpoint ${model.get}`,
-            );
-            return;
-          }
-
-          const result = await pollTask(model.get, taskId, {
-            silent: globals.json,
-          });
-
-          if (globals.json) {
-            printJson(result.raw);
-            return;
-          }
-
-          const paths = await downloadGenerated(result.generated, opts.output, globals.verbose);
-
-          appendHistory({
-            timestamp: new Date().toISOString(),
-            command: 'generate',
-            model: modelName,
-            prompt: effectivePrompt,
-            seed: opts.seed ? Number(opts.seed) : undefined,
-            taskId,
-            outputPath: paths[0],
-          }).catch(() => {});
-
+          const paths = await runSingleGeneration(
+            effectivePrompt,
+            opts,
+            modelName,
+            opts.seed ? Number(opts.seed) : undefined,
+            opts.output,
+          );
           if (opts.open && paths.length > 0) {
             openFile(paths[0]);
           }

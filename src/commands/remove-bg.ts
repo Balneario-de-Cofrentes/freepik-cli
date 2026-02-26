@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { globals } from '../lib/globals.js';
 import { post } from '../lib/api.js';
 import { downloadFile } from '../lib/download.js';
@@ -55,7 +55,7 @@ Examples:
           info('Removing background locally with rembg...');
 
           try {
-            execSync(`rembg i "${image}" "${outputPath}"`, { stdio: 'pipe' });
+            execFileSync('rembg', ['i', image, outputPath], { stdio: 'pipe' });
             success(`Saved to ${outputPath}`);
 
             if (opts.open) {

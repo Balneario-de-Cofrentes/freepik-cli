@@ -1,12 +1,8 @@
 import { Command } from 'commander';
-import { globals } from '../lib/globals.js';
-import { post } from '../lib/api.js';
-import { pollTask } from '../lib/poll.js';
-import { downloadGenerated } from '../lib/download.js';
 import { ENDPOINTS } from '../lib/models.js';
-import { openFile } from '../lib/open.js';
-import { info, error, printJson, c } from '../lib/output.js';
-import type { IconOptions, TaskCreateResponse } from '../types.js';
+import { runAsyncTask } from '../lib/run-task.js';
+import { error, c } from '../lib/output.js';
+import type { IconOptions } from '../types.js';
 
 const VALID_STYLES = ['solid', 'outline', 'color', 'flat', 'sticker'] as const;
 const VALID_FORMATS = ['png', 'svg'] as const;
@@ -49,10 +45,6 @@ Styles: solid (default), outline, color, flat, sticker`)
           );
         }
 
-        info(
-          `Generating ${c.bold}${opts.style}${c.reset} icon: "${prompt}"`,
-        );
-
         const body: Record<string, unknown> = {
           prompt,
           style: opts.style,
@@ -61,36 +53,12 @@ Styles: solid (default), outline, color, flat, sticker`)
           guidance_scale: Number(opts.guidance ?? 7),
         };
 
-        const ep = ENDPOINTS.icon;
-        const res = await post<TaskCreateResponse>(ep.post, body);
-
-        if (globals.json) {
-          printJson(res);
-          return;
-        }
-
-        const taskId = res.data.task_id;
-        info(`Task created: ${taskId}`);
-
-        if (!opts.download) {
-          info(
-            `Check status with: freepik status ${taskId} --endpoint ${ep.get}`,
-          );
-          return;
-        }
-
-        const result = await pollTask(ep.get, taskId, { silent: globals.json });
-
-        if (globals.json) {
-          printJson(result.raw);
-          return;
-        }
-
-        const paths = await downloadGenerated(result.generated, opts.output, globals.verbose);
-
-        if (opts.open && paths.length > 0) {
-          openFile(paths[0]);
-        }
+        await runAsyncTask(ENDPOINTS.icon, body, {
+          download: opts.download,
+          output: opts.output,
+          open: opts.open,
+          label: `Generating ${c.bold}${opts.style}${c.reset} icon: "${prompt}"`,
+        });
       } catch (err) {
         error((err as Error).message);
         process.exit(1);

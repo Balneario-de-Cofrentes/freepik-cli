@@ -1,14 +1,9 @@
-import { appendFile, readFile, mkdir } from 'node:fs/promises';
-import { homedir } from 'node:os';
+import { appendFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { CONFIG_DIR, ensureConfigDir } from './config.js';
 import type { HistoryEntry } from '../types.js';
 
-const CONFIG_DIR = join(homedir(), '.config', 'freepik-cli');
 const HISTORY_FILE = join(CONFIG_DIR, 'history.jsonl');
-
-async function ensureDir(): Promise<void> {
-  await mkdir(CONFIG_DIR, { recursive: true });
-}
 
 /**
  * Append a history entry to the JSONL file.
@@ -16,7 +11,7 @@ async function ensureDir(): Promise<void> {
  */
 export async function appendHistory(entry: HistoryEntry): Promise<void> {
   try {
-    await ensureDir();
+    await ensureConfigDir();
     await appendFile(HISTORY_FILE, JSON.stringify(entry) + '\n', 'utf-8');
   } catch {
     // Never fail the main command over history tracking
@@ -25,12 +20,21 @@ export async function appendHistory(entry: HistoryEntry): Promise<void> {
 
 /**
  * Read all history entries from the JSONL file.
+ * Resilient to corrupted lines: skips any line that fails to parse.
  */
 export async function readHistory(): Promise<HistoryEntry[]> {
   try {
     const raw = await readFile(HISTORY_FILE, 'utf-8');
-    const lines = raw.trim().split('\n').filter(Boolean);
-    return lines.map((line) => JSON.parse(line) as HistoryEntry);
+    const entries: HistoryEntry[] = [];
+    for (const line of raw.trim().split('\n')) {
+      if (!line) continue;
+      try {
+        entries.push(JSON.parse(line) as HistoryEntry);
+      } catch {
+        // Skip corrupted line
+      }
+    }
+    return entries;
   } catch {
     return [];
   }

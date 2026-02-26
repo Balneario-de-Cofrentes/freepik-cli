@@ -1,12 +1,9 @@
 import { Command } from 'commander';
-import { globals } from '../lib/globals.js';
-import { post } from '../lib/api.js';
-import { pollTask } from '../lib/poll.js';
-import { downloadGenerated } from '../lib/download.js';
 import { getImageValue } from '../lib/image-input.js';
 import { getVideoModel, listVideoModels } from '../lib/models.js';
-import { info, error, printJson, c } from '../lib/output.js';
-import type { VideoOptions, TaskCreateResponse } from '../types.js';
+import { runAsyncTask } from '../lib/run-task.js';
+import { error, c } from '../lib/output.js';
+import type { VideoOptions } from '../types.js';
 
 export function registerVideoCommand(program: Command): void {
   const models = listVideoModels();
@@ -46,8 +43,6 @@ Note: Video generation takes 1-5 minutes. The CLI polls automatically.`)
           );
         }
 
-        info(`Generating video with ${c.bold}${modelName}${c.reset}...`);
-
         const body: Record<string, unknown> = {};
 
         if (opts.image) {
@@ -57,35 +52,12 @@ Note: Video generation takes 1-5 minutes. The CLI polls automatically.`)
           body.prompt = opts.prompt;
         }
 
-        const res = await post<TaskCreateResponse>(model.post, body);
-
-        if (globals.json) {
-          printJson(res);
-          return;
-        }
-
-        const taskId = res.data.task_id;
-        info(`Task created: ${taskId}`);
-
-        if (!opts.download) {
-          info(
-            `Check status with: freepik status ${taskId} --endpoint ${model.get}`,
-          );
-          return;
-        }
-
-        // Videos take longer, increase timeout to 10 min
-        const result = await pollTask(model.get, taskId, {
+        await runAsyncTask(model, body, {
+          download: opts.download,
+          output: opts.output,
           maxWait: 600_000,
-          silent: globals.json,
+          label: `Generating video with ${c.bold}${modelName}${c.reset}...`,
         });
-
-        if (globals.json) {
-          printJson(result.raw);
-          return;
-        }
-
-        await downloadGenerated(result.generated, opts.output, globals.verbose);
       } catch (err) {
         error((err as Error).message);
         process.exit(1);

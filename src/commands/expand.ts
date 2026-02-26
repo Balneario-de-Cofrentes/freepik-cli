@@ -1,13 +1,9 @@
 import { Command } from 'commander';
-import { globals } from '../lib/globals.js';
-import { post } from '../lib/api.js';
-import { pollTask } from '../lib/poll.js';
-import { downloadGenerated } from '../lib/download.js';
 import { getImageValue } from '../lib/image-input.js';
 import { ENDPOINTS } from '../lib/models.js';
-import { openFile } from '../lib/open.js';
-import { info, error, printJson, c } from '../lib/output.js';
-import type { ExpandOptions, TaskCreateResponse } from '../types.js';
+import { runAsyncTask } from '../lib/run-task.js';
+import { error, c } from '../lib/output.js';
+import type { ExpandOptions } from '../types.js';
 
 const VALID_ENGINES = ['flux-pro', 'ideogram', 'seedream-v4-5'] as const;
 
@@ -58,10 +54,6 @@ Engines: flux-pro (default), ideogram, seedream-v4-5`)
           );
         }
 
-        info(
-          `Expanding image (L:${left} R:${right} T:${top} B:${bottom}) with ${c.bold}${engine}${c.reset}...`,
-        );
-
         const imageValue = await getImageValue(image);
         const body: Record<string, unknown> = {
           image: imageValue,
@@ -73,35 +65,12 @@ Engines: flux-pro (default), ideogram, seedream-v4-5`)
         if (opts.prompt) body.prompt = opts.prompt;
 
         const ep = ENDPOINTS.expand[engine as keyof typeof ENDPOINTS.expand];
-        const res = await post<TaskCreateResponse>(ep.post, body);
-
-        if (globals.json) {
-          printJson(res);
-          return;
-        }
-
-        const taskId = res.data.task_id;
-        info(`Task created: ${taskId}`);
-
-        if (!opts.download) {
-          info(
-            `Check status with: freepik status ${taskId} --endpoint ${ep.get}`,
-          );
-          return;
-        }
-
-        const result = await pollTask(ep.get, taskId, { silent: globals.json });
-
-        if (globals.json) {
-          printJson(result.raw);
-          return;
-        }
-
-        const paths = await downloadGenerated(result.generated, opts.output, globals.verbose);
-
-        if (opts.open && paths.length > 0) {
-          openFile(paths[0]);
-        }
+        await runAsyncTask(ep, body, {
+          download: opts.download,
+          output: opts.output,
+          open: opts.open,
+          label: `Expanding image (L:${left} R:${right} T:${top} B:${bottom}) with ${c.bold}${engine}${c.reset}...`,
+        });
       } catch (err) {
         error((err as Error).message);
         process.exit(1);

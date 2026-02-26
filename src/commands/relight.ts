@@ -1,13 +1,9 @@
 import { Command } from 'commander';
-import { globals } from '../lib/globals.js';
-import { post } from '../lib/api.js';
-import { pollTask } from '../lib/poll.js';
-import { downloadGenerated } from '../lib/download.js';
 import { getImageValue } from '../lib/image-input.js';
 import { ENDPOINTS } from '../lib/models.js';
-import { openFile } from '../lib/open.js';
-import { info, error, printJson } from '../lib/output.js';
-import type { SimpleImageOptions, TaskCreateResponse } from '../types.js';
+import { runAsyncTask } from '../lib/run-task.js';
+import { error } from '../lib/output.js';
+import type { SimpleImageOptions } from '../types.js';
 
 export function registerRelightCommand(program: Command): void {
   program
@@ -25,44 +21,18 @@ Examples:
   $ freepik relight room.jpg --prompt "soft natural window light" -o bright-room.png`)
     .action(async (image: string, opts: SimpleImageOptions & { open?: boolean }) => {
       try {
-        info('Relighting image...');
-
         const imageValue = await getImageValue(image);
         const body: Record<string, unknown> = {
           image: imageValue,
         };
         if (opts.prompt) body.prompt = opts.prompt;
 
-        const ep = ENDPOINTS.relight;
-        const res = await post<TaskCreateResponse>(ep.post, body);
-
-        if (globals.json) {
-          printJson(res);
-          return;
-        }
-
-        const taskId = res.data.task_id;
-        info(`Task created: ${taskId}`);
-
-        if (!opts.download) {
-          info(
-            `Check status with: freepik status ${taskId} --endpoint ${ep.get}`,
-          );
-          return;
-        }
-
-        const result = await pollTask(ep.get, taskId, { silent: globals.json });
-
-        if (globals.json) {
-          printJson(result.raw);
-          return;
-        }
-
-        const paths = await downloadGenerated(result.generated, opts.output, globals.verbose);
-
-        if (opts.open && paths.length > 0) {
-          openFile(paths[0]);
-        }
+        await runAsyncTask(ENDPOINTS.relight, body, {
+          download: opts.download,
+          output: opts.output,
+          open: opts.open,
+          label: 'Relighting image...',
+        });
       } catch (err) {
         error((err as Error).message);
         process.exit(1);

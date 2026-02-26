@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const PROJECT_ROOT = '/Users/juancartagena/CodeProjects/djinn/freepikcli';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = resolve(__dirname, '..');
 const BINARY = join(PROJECT_ROOT, 'dist/index.js');
 
 // Helper to run CLI command

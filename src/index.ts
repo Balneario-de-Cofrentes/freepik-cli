@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
+import { createRequire } from 'node:module';
 import { Command } from 'commander';
+
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json') as { version: string };
 import { setVerbose } from './lib/api.js';
 import { setGlobals } from './lib/globals.js';
 import { needsOnboarding, runOnboarding } from './lib/onboarding.js';
@@ -57,7 +61,7 @@ async function main(): Promise<void> {
       'The missing CLI for the Freepik API. One command to generate images, videos, icons, music, and more.\n' +
       'Handles authentication, async polling, file downloads, and format conversion automatically.',
     )
-    .version('0.2.0')
+    .version(pkg.version)
     .option('--verbose', 'Enable verbose output for debugging')
     .option('--json', 'Output raw JSON responses')
     .hook('preAction', (thisCommand) => {

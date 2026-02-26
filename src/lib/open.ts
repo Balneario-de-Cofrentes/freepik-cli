@@ -1,8 +1,7 @@
-import { exec } from 'node:child_process';
-import { platform } from 'node:os';
+import { execFile } from 'node:child_process';
 
 function getOpenCommand(): string {
-  switch (platform()) {
+  switch (process.platform) {
     case 'darwin':
       return 'open';
     case 'win32':
@@ -13,11 +12,17 @@ function getOpenCommand(): string {
 }
 
 export function openFile(path: string): void {
-  const cmd = getOpenCommand();
-  exec(`${cmd} "${path}"`);
+  execFile(getOpenCommand(), [path], (err) => {
+    if (err && process.env.NODE_ENV !== 'test') {
+      console.error(`Could not open file: ${err.message}`);
+    }
+  });
 }
 
 export function openUrl(url: string): void {
-  const cmd = getOpenCommand();
-  exec(`${cmd} "${url}"`);
+  execFile(getOpenCommand(), [url], (err) => {
+    if (err && process.env.NODE_ENV !== 'test') {
+      console.error(`Could not open URL: ${err.message}`);
+    }
+  });
 }
