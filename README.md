@@ -7,29 +7,28 @@ The missing CLI for the Freepik API. Generate images, videos, icons, music, and 
 
 ## Why freepik-cli?
 
+The Freepik API is async: most operations require a POST, repeated polling until completion, then downloading the result. When called from an LLM agent, each of those steps costs tokens and inference time. The CLI collapses the entire sequence into one deterministic command. See [For AI Agents](#for-ai-agents) for the full breakdown.
+
 | Feature | freepik-cli | Freepik MCP (official) | Direct API (curl/fetch) |
 |---------|------------|----------------------|----------------------|
+| **LLM turns per operation** | 1 (single command) | 3-5 (poll loop + download) | 3-5 (same, manual) |
+| **Tokens per operation** | ~110 | ~2700+ | ~2700+ |
+| **Determinism** | CLI handles all steps | Agent decides each step | Agent decides each step |
 | **API coverage** | 23 commands (all endpoints) | 4 tools (Mystic, icons, resources, classify) | All endpoints (manual) |
 | **Image models** | 11 models with named aliases | Mystic only | All (raw endpoint paths) |
 | **Video generation** | 5 models (Kling, Hailuo, Wan) | Not supported | All (manual polling) |
 | **Audio** | Music + sound effects | Not supported | All (manual polling) |
 | **Image editing** | Upscale, remove-bg, expand, relight, style-transfer | Not supported | All (manual polling) |
-| **Setup** | `git clone` + `pnpm link` | MCP server config + uv | Manual auth headers |
-| **Auth handling** | Auto (config or env var) | Env var per server | Manual every request |
 | **Async task polling** | Automatic (waits + downloads) | Handled by MCP for Mystic | Manual (build your own) |
 | **File download** | Automatic to disk | Returns URLs (agent decides) | Manual download |
 | **Image input** | Local files or URLs (auto base64) | Depends on agent | Manual base64 encoding |
 | **Batch operations** | `--count N` or `batch manifest.json` | One call at a time | Build your own |
 | **Smart model selection** | `--smart` auto-picks best model | N/A (Mystic only) | N/A |
-| **Prompt templates** | 7 built-in templates | None | None |
 | **Cost tracking** | `freepik history --total-cost` | None | None |
 | **Rate limit visibility** | `freepik credits` | None | Parse headers yourself |
 | **JSON output** | `--json` flag on every command | Native (structured MCP responses) | Native JSON |
 | **Offline bg removal** | `--local` flag (uses rembg) | Not available | Not available |
-| **Error messages** | Human-readable with suggestions | Structured MCP errors | Raw API errors |
-| **Progress indicator** | Built-in spinner | N/A (async MCP) | None |
-| **Works without MCP** | Yes (standalone CLI) | Requires MCP runtime | Yes |
-| **Icon/resource search** | `freepik search` | Native (icons + resources) | Manual |
+| **Works without LLM** | Yes (standalone CLI + shell scripts) | Requires MCP runtime | Yes |
 
 ## Features
 
@@ -89,54 +88,77 @@ That's it. The CLI handles API polling and downloads automatically.
 
 ## For AI Agents
 
-freepik-cli is designed as the optimal interface for AI agents and programmatic workflows. One command = one complete operation with no multi-step orchestration needed.
+### CLI vs MCP vs Direct API: Token Cost and Determinism
 
-### Why Agents Should Use freepik-cli
+The Freepik API is async: most operations require POST, then repeated polling, then downloading the result. How you interface with that pipeline has a real impact on cost and reliability when called from an LLM agent.
 
-- **One command = complete operation**: Generate, poll, and download all happen in a single invocation. No retry loops or external polling logic required.
-- **Structured JSON output**: Use `--json` to get machine-readable results parseable with `jq`.
-- **No async management**: The CLI handles polling internally. Agents don't need to wait, retry, or manage task IDs.
-- **No base64 encoding overhead**: Local file paths work directly. Remote URLs are fetched and encoded automatically.
-- **Named model aliases**: Use human-readable names like `mystic`, `flux-2-pro`, `hyperflux` instead of memorizing API endpoint paths.
-- **Auto-selection with `--smart`**: Remove model selection decisions entirely. The CLI analyzes the prompt and picks the best model.
-- **Batch operations**: Process multiple assets in a single command with `--concurrency` control.
-- **File paths for results**: Get usable output immediately (no URL-based temporary downloads).
+**MCP or direct API (multi-step, non-deterministic):**
 
-### Agent Workflow Examples
+Each step requires a full LLM inference round. The agent reasons about what to call, generates parameters, receives the response, then reasons again about the next step.
+
+```
+Turn 1: Agent reasons + generates MCP/API call      → ~500 tokens out
+Turn 1: Receives task_id + metadata                  → ~300 tokens in
+Turn 2: Agent reasons "I need to poll" + polls       → ~400 tokens out
+Turn 2: Receives "status: PENDING"                   → ~200 tokens in
+Turn 3: Agent polls again                            → ~400 tokens out
+Turn 3: Receives "status: COMPLETED" + URL           → ~500 tokens in
+Turn 4: Agent reasons "I need to download" + fetches → ~400 tokens out
+         ─────────────────────────────────────────
+         Total: 4+ LLM turns, ~2700+ tokens
+```
+
+Each turn adds LLM inference latency (seconds) on top of API latency. And at every turn the agent can make a mistake: wrong parameters, premature polling, forgetting to download, misinterpreting an error.
+
+**CLI (single invocation, deterministic):**
+
+```
+Turn 1: Agent generates one shell command             → ~80 tokens out
+         freepik generate "prompt" --model mystic -o output.png
+         (internally: POST → poll → poll → download → done)
+Turn 1: Receives "Saved to output.png"                → ~30 tokens in
+         ─────────────────────────────────────────
+         Total: 1 LLM turn, ~110 tokens
+```
+
+All polling, downloading, base64 encoding, and error handling happen inside the CLI process. Zero tokens spent on that logic. The LLM's only job is to construct the right command.
+
+**Comparison:**
+
+| | MCP / Direct API | CLI |
+|---|---|---|
+| LLM turns per operation | 3-5 | 1 |
+| Tokens consumed | ~2700+ | ~110 |
+| Points where the LLM can fail | Every turn | Only the initial command |
+| Total latency | (N turns x inference) + API | (1 turn x inference) + API |
+| Determinism | Agent decides each step | CLI executes the same way every time |
+
+This multiplies with scale. 10 images via MCP means 30-50 LLM turns. With `freepik batch manifest.json`, it's still 1 turn.
+
+The general principle: any API that requires polling or multi-step orchestration is better wrapped in a CLI than exposed as individual MCP tools or raw API calls. The CLI converts non-deterministic multi-step operations into a single deterministic invocation.
+
+### Agent Examples
 
 ```bash
-# Single image generation with structured output
+# One command = complete operation (POST + poll + download)
 freepik generate "product photo of wireless earbuds on marble surface" -o earbuds.png
 
-# Auto-select best model based on prompt analysis
-freepik generate "professional corporate team photo for website" --smart -o team.png
+# Let the CLI pick the model so the agent doesn't have to
+freepik generate "professional corporate team photo" --smart -o team.png
 
-# Get structured JSON for programmatic pipelines
-freepik generate "modern logo concept, tech startup" --json | jq -r '.data.generated[0].path'
+# Structured output for programmatic pipelines
+freepik generate "modern logo concept" --json | jq -r '.data.generated[0].path'
 
-# Batch generate multiple marketing assets concurrently
-cat <<EOF > marketing-assets.json
-[
-  {"command": "generate", "prompt": "hero banner image for tech SaaS landing page", "model": "flux-2-pro", "output": "hero.png"},
-  {"command": "generate", "prompt": "team collaboration illustration for website", "model": "mystic", "output": "team.png"},
-  {"command": "generate", "prompt": "minimalist app icon design", "model": "hyperflux", "output": "icon.png"},
-  {"command": "generate", "prompt": "product screenshot mockup for documentation", "model": "flux-2-turbo", "output": "mockup.png"}
-]
-EOF
+# Batch: 4 images, 3 concurrent, 1 LLM turn instead of 12-20
 freepik batch marketing-assets.json --concurrency 3
 
-# Image processing pipeline (chained operations)
+# Multi-step pipeline, still deterministic (no LLM reasoning between steps)
 freepik generate "raw product photo" -o raw.png && \
 freepik upscale raw.png --scale 4x -o upscaled.png && \
-freepik remove-bg upscaled.png -o final.png && \
-freepik describe final.png
+freepik remove-bg upscaled.png -o final.png
 
-# Check capabilities before generating (useful for agent discovery)
-freepik models
-freepik credits
-
-# Video generation with automatic polling
-freepik video --prompt "product demo walkthrough, smooth camera movement" --model wan-2.5-t2v -o demo.mp4
+# Video with automatic polling (would be 5+ MCP turns)
+freepik video --prompt "product demo walkthrough" --model wan-2.5-t2v -o demo.mp4
 ```
 
 ### Quick Model Reference for Agents
@@ -691,4 +713,4 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
-With love from the tech team at [Balneario de Cofrentes](https://balneariodecofrentes.es) - the largest longevity clinic.
+With love from the tech team at [Balneario de Cofrentes](https://balneario.com) - the largest longevity clinic.
