@@ -27,6 +27,15 @@ export function registerIconCommand(program: Command): void {
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
     .option('--open', 'Open the file after downloading')
+    .addHelpText('after', `
+Examples:
+  $ freepik icon "shopping cart" -o cart.png
+  $ freepik icon "notification bell" --style outline --format svg -o bell.svg
+  $ freepik icon "home" --style flat --format png -o home.png
+  $ freepik icon "settings gear" --style sticker --steps 30 -o gear.png
+  $ freepik icon "play button" --guidance 9 -o play.png
+
+Styles: solid (default), outline, color, flat, sticker`)
     .action(async (prompt: string, opts: IconOptions & { open?: boolean }) => {
       try {
         if (!VALID_STYLES.includes(opts.style as (typeof VALID_STYLES)[number])) {

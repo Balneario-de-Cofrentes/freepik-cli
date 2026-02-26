@@ -12,6 +12,13 @@ export function registerDescribeCommand(program: Command): void {
     .command('describe')
     .description('Convert an image to a text prompt description')
     .argument('<image>', 'Input image (local file path or URL)')
+    .addHelpText('after', `
+Examples:
+  $ freepik describe photo.jpg
+  $ freepik describe https://example.com/image.jpg
+  $ freepik describe artwork.png                    # Get a prompt to recreate this image
+
+Useful for reverse-engineering prompts from existing images.`)
     .action(async (image: string, _opts: DescribeOptions) => {
       try {
         info('Analyzing image to generate prompt...');

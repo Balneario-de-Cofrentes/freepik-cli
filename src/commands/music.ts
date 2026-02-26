@@ -14,6 +14,14 @@ export function registerMusicCommand(program: Command): void {
     .argument('<prompt>', 'Text description of the music (e.g. "upbeat electronic track, 120bpm")')
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
+    .addHelpText('after', `
+Examples:
+  $ freepik music "upbeat electronic track, 120bpm, energetic" -o track.mp3
+  $ freepik music "chill lofi beat, jazzy chords, vinyl crackle, 85bpm" -o lofi.mp3
+  $ freepik music "epic orchestral, cinematic, building tension" -o epic.mp3
+  $ freepik music "acoustic guitar, folk, warm and intimate" -o folk.mp3
+
+Tip: Be specific about genre, tempo, instruments, and mood for best results.`)
     .action(async (prompt: string, opts: MusicOptions) => {
       try {
         info(`Generating music: "${prompt.length > 60 ? prompt.slice(0, 60) + '...' : prompt}"`);

@@ -11,6 +11,12 @@ export function registerClassifyCommand(program: Command): void {
     .command('classify')
     .description('Detect if an image is AI-generated')
     .argument('<image>', 'Input image (local file path or URL)')
+    .addHelpText('after', `
+Examples:
+  $ freepik classify suspicious-photo.jpg
+  $ freepik classify https://example.com/image.jpg
+
+Returns a confidence score (0-1) indicating if the image is AI-generated.`)
     .action(async (image: string, opts: ClassifyOptions) => {
       try {
         info('Analyzing image...');

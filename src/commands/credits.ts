@@ -9,6 +9,12 @@ export function registerCreditsCommand(program: Command): void {
   program
     .command('credits')
     .description('Show API rate limits and model pricing')
+    .addHelpText('after', `
+Examples:
+  $ freepik credits
+
+Shows your current API rate limits and remaining credits.
+Run after any generation to see updated limits.`)
     .action(async (_opts: CreditsOptions) => {
       try {
         // Make a lightweight GET request to trigger rate limit headers

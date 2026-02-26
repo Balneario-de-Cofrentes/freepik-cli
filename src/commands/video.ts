@@ -19,6 +19,16 @@ export function registerVideoCommand(program: Command): void {
     .option('--prompt <text>', 'Text prompt for the video')
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
+    .addHelpText('after', `
+Examples:
+  $ freepik video --prompt "waves crashing on beach at sunset" -o ocean.mp4
+  $ freepik video --image photo.jpg --prompt "slow zoom in" -o animated.mp4
+  $ freepik video --image scene.png --model kling-2.6-pro -o cinematic.mp4
+  $ freepik video --prompt "timelapse of flowers blooming" --model wan-2.5-t2v -o flowers.mp4
+  $ freepik video --image hero.jpg --json                       # Agent: get raw JSON response
+
+Models: kling-2.1-pro, kling-2.5-pro, kling-2.6-pro (image-to-video) | wan-2.5-t2v (text-to-video) | hailuo-02
+Note: Video generation takes 1-5 minutes. The CLI polls automatically.`)
     .action(async (opts: VideoOptions) => {
       try {
         const modelName = opts.model;

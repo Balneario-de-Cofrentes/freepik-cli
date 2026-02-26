@@ -39,6 +39,14 @@ export function registerSearchCommand(program: Command): void {
     .option('--type <type>', 'Content type (photo, psd, vector)')
     .option('--license <license>', 'License type (freemium, premium)')
     .option('--ai-generated', 'Filter for AI-generated content only')
+    .addHelpText('after', `
+Examples:
+  $ freepik search "business meeting"
+  $ freepik search "sunset landscape" --type photo --orientation landscape
+  $ freepik search "vector icons" --type vector --limit 20
+  $ freepik search "premium backgrounds" --license premium --page 2
+  $ freepik search "AI art" --ai-generated --order recent
+  $ freepik search "cat" --json | jq '.data[].id'              # Agent: extract IDs`)
     .action(async (query: string, opts: SearchOptions) => {
       try {
         info(`Searching: "${query}"`);

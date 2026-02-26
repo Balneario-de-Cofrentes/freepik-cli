@@ -8,6 +8,12 @@ export function registerTemplatesCommand(program: Command): void {
   program
     .command('templates')
     .description('List available prompt templates')
+    .addHelpText('after', `
+Examples:
+  $ freepik templates
+
+Shows all prompt templates with their variables.
+Use with: freepik generate --template <name> --vars "key=value,key2=value2"`)
     .action(async (_opts: TemplatesOptions) => {
       if (globals.json) {
         printJson(TEMPLATES);

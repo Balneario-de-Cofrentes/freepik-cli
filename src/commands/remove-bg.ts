@@ -34,6 +34,12 @@ export function registerRemoveBgCommand(program: Command): void {
     .option('-o, --output <path>', 'Output file path')
     .option('--local', 'Use local rembg instead of API (free, offline)')
     .option('--open', 'Open the file after processing')
+    .addHelpText('after', `
+Examples:
+  $ freepik remove-bg product.jpg -o product-clean.png
+  $ freepik remove-bg portrait.jpg -o portrait-nobg.png --open
+  $ freepik remove-bg https://example.com/photo.jpg -o clean.png    # Works with URLs
+  $ freepik remove-bg photo.jpg --local -o clean.png                # Free offline mode (requires rembg)`)
     .action(async (image: string, opts: RemoveBgOptions) => {
       try {
         // ── Local mode (rembg) ─────────────────────────────────

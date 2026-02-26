@@ -233,6 +233,21 @@ export function registerGenerateCommand(program: Command): void {
       '--lighting <lighting>',
       'Lighting for Flux Dev (iridescent, dramatic, goldenhour, longexposure, indorlight, flash, neon)',
     )
+    .addHelpText('after', `
+Examples:
+  $ freepik generate "a cat in space" -o cat.png
+  $ freepik generate "professional headshot" --smart -o photo.png
+  $ freepik generate "sunset landscape" -m mystic --resolution 4k -o sunset.png
+  $ freepik generate "logo concept" -m hyperflux -o logo.png
+  $ freepik generate "abstract art" -m flux-dev --color-effect vibrant --lighting neon -o art.png
+  $ freepik generate "product mockup" --count 5 -o "product-{n}.png"
+  $ freepik generate --template product-photo --vars "product=headphones,background=white" -o headphones.png
+  $ freepik generate "hero banner" --aspect-ratio widescreen_16_9 -o banner.png
+  $ freepik generate "icon set" --json | jq '.data.task_id'    # Agent: get task ID only
+  $ freepik generate "test" --no-download                       # Agent: skip download, get task info
+
+Free models (no cost):  flux-2-turbo (default), flux-2-klein, hyperflux, flux-dev, seedream-4, seedream-4.5
+Premium models:         mystic (best quality), flux-2-pro, flux-kontext, flux-pro-1.1, runway`)
     .action(async (prompt: string | undefined, opts: GenerateOptions) => {
       try {
         let effectivePrompt = prompt ?? '';

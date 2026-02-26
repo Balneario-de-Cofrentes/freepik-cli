@@ -23,7 +23,12 @@ interface LoraListResponse {
 export function registerLoraCommand(program: Command): void {
   const loraCmd = program
     .command('lora')
-    .description('Manage LoRA models (list, train)');
+    .description('Manage LoRA models (list, train)')
+    .addHelpText('after', `
+Examples:
+  $ freepik lora list
+  $ freepik lora train-character "my-character" --images img1.jpg,img2.jpg,img3.jpg
+  $ freepik lora train-style "my-style" --images style1.jpg,style2.jpg`);
 
   // ── lora list ──────────────────────────────────────────────────────
   loraCmd

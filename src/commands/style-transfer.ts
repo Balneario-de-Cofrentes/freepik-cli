@@ -18,6 +18,10 @@ export function registerStyleTransferCommand(program: Command): void {
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
     .option('--open', 'Open the file after downloading')
+    .addHelpText('after', `
+Examples:
+  $ freepik style-transfer photo.jpg --style painting.jpg -o styled.png
+  $ freepik style-transfer selfie.jpg --style "https://example.com/art-style.jpg" -o artistic.png`)
     .action(async (image: string, opts: StyleTransferOptions) => {
       try {
         info('Applying style transfer...');

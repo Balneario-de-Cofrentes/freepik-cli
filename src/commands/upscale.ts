@@ -37,6 +37,14 @@ export function registerUpscaleCommand(program: Command): void {
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
     .option('--open', 'Open the file after downloading')
+    .addHelpText('after', `
+Examples:
+  $ freepik upscale photo.jpg -o photo-hd.png
+  $ freepik upscale photo.jpg --scale 4x -o photo-4x.png
+  $ freepik upscale portrait.jpg --scale 2x --optimized-for soft_portraits -o portrait-hd.png
+  $ freepik upscale artwork.png --scale 4x --optimized-for art_n_illustration -o artwork-4x.png
+  $ freepik upscale photo.jpg --prompt "enhance details, sharp focus" --creativity 5 -o enhanced.png
+  $ freepik upscale https://example.com/image.jpg --scale 2x -o upscaled.png   # Works with URLs too`)
     .action(async (image: string, opts: UpscaleOptions & { open?: boolean }) => {
       try {
         const scaleNum = SCALE_MAP[opts.scale];

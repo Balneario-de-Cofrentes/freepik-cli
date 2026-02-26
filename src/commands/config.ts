@@ -5,7 +5,16 @@ import { info, success, error, c } from '../lib/output.js';
 export function registerConfigCommand(program: Command): void {
   const configCmd = program
     .command('config')
-    .description('Manage CLI configuration');
+    .description('Manage CLI configuration')
+    .addHelpText('after', `
+Examples:
+  $ freepik config set-key YOUR_API_KEY
+  $ freepik config set-model mystic
+  $ freepik config set-output-dir ./generated
+  $ freepik config show
+
+Config location: ~/.config/freepik-cli/config.json
+Environment variable FREEPIK_API_KEY overrides stored key.`);
 
   configCmd
     .command('set-key')

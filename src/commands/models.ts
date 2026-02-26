@@ -8,6 +8,12 @@ export function registerModelsCommand(program: Command): void {
   program
     .command('models')
     .description('List all available models with details')
+    .addHelpText('after', `
+Examples:
+  $ freepik models
+
+Shows all available models with speed, quality, tier, and cost estimates.
+Free models: flux-2-turbo, flux-2-klein, hyperflux, flux-dev, seedream-4, seedream-4.5`)
     .action(async (_opts: ModelsOptions) => {
       if (globals.json) {
         printJson(MODEL_INFO);

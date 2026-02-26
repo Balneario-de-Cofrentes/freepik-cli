@@ -123,6 +123,21 @@ export function registerBatchCommand(program: Command): void {
     .description('Execute multiple operations from a JSON manifest')
     .argument('<manifest>', 'Path to JSON manifest file')
     .option('--concurrency <n>', 'Max parallel operations', '3')
+    .addHelpText('after', `
+Examples:
+  $ freepik batch manifest.json
+  $ freepik batch manifest.json --concurrency 5
+
+Manifest format (manifest.json):
+  [
+    { "command": "generate", "prompt": "cat in space", "output": "cat.png" },
+    { "command": "generate", "prompt": "dog on moon", "model": "mystic", "output": "dog.png" },
+    { "command": "upscale", "image": "photo.jpg", "scale": "4x", "output": "photo-4x.png" },
+    { "command": "remove-bg", "image": "product.jpg", "output": "product-clean.png" }
+  ]
+
+Supported commands in manifest: generate, upscale, remove-bg
+Agent tip: Generate the manifest JSON programmatically, then pass to batch.`)
     .action(async (manifestPath: string, opts: BatchOptions) => {
       try {
         const items = await loadManifest(manifestPath);

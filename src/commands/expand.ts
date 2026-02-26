@@ -29,6 +29,15 @@ export function registerExpandCommand(program: Command): void {
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
     .option('--open', 'Open the file after downloading')
+    .addHelpText('after', `
+Examples:
+  $ freepik expand photo.jpg --right 200 --left 200 -o wider.png
+  $ freepik expand portrait.jpg --top 300 --bottom 100 -o taller.png
+  $ freepik expand scene.jpg --right 500 --prompt "continue the landscape" -o expanded.png
+  $ freepik expand photo.jpg --top 200 --bottom 200 --left 200 --right 200 -o padded.png
+  $ freepik expand photo.jpg --engine seedream-v4-5 --right 300 -o expanded.png
+
+Engines: flux-pro (default), ideogram, seedream-v4-5`)
     .action(async (image: string, opts: ExpandOptions & { open?: boolean }) => {
       try {
         const engine = (opts.engine ?? 'flux-pro') as keyof typeof ENDPOINTS.expand;

@@ -15,6 +15,12 @@ export function registerStatusCommand(program: Command): void {
       'API endpoint path (e.g. /v1/ai/text-to-image/flux-2-turbo)',
     )
     .option('-o, --output <path>', 'Download output to this path if completed')
+    .addHelpText('after', `
+Examples:
+  $ freepik status abc123 --endpoint /v1/ai/text-to-image/flux-2-turbo
+  $ freepik status abc123 --endpoint /v1/ai/mystic -o result.png
+
+Use when you ran a command with --no-download and want to check/download later.`)
     .action(async (taskId: string, opts: StatusOptions & { output?: string }) => {
       try {
         info(`Checking task ${taskId}...`);

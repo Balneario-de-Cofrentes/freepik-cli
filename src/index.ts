@@ -54,7 +54,8 @@ async function main(): Promise<void> {
   program
     .name('freepik')
     .description(
-      'CLI tool for the Freepik API - generate images, videos, icons, music, and more',
+      'The missing CLI for the Freepik API. One command to generate images, videos, icons, music, and more.\n' +
+      'Handles authentication, async polling, file downloads, and format conversion automatically.',
     )
     .version('0.2.0')
     .option('--verbose', 'Enable verbose output for debugging')
@@ -66,6 +67,42 @@ async function main(): Promise<void> {
         setVerbose(true);
       }
     });
+
+  program.addHelpText('after', `
+QUICK START
+  $ freepik generate "a cat in space" -o cat.png          Generate an image
+  $ freepik generate "hero banner" --smart -o banner.png   Auto-pick best model
+  $ freepik upscale photo.jpg --scale 4x -o photo-hd.png  Upscale to 4x
+  $ freepik remove-bg product.jpg -o clean.png             Remove background
+  $ freepik video --image photo.jpg --prompt "zoom in" -o video.mp4
+
+COMMANDS BY CATEGORY
+  Image Generation:   generate, reimagine, icon
+  Image Editing:      upscale, remove-bg, expand, relight, style-transfer
+  Image Analysis:     describe, classify
+  Video:              video
+  Audio:              music, sfx
+  Search:             search
+  Batch & Workflow:   batch, open, status, history
+  Configuration:      config, models, templates, credits
+  Custom Training:    lora
+
+AGENT TIPS
+  Use --json on any command for structured, parseable output.
+  Use --no-download to get task IDs without waiting for files.
+  Use "batch" to execute multiple operations from a JSON manifest.
+  Use --smart on "generate" to auto-select the best model for a prompt.
+  Pipe --json output to jq for field extraction:
+    $ freepik generate "test" --json | jq '.data.task_id'
+  All image inputs accept local file paths OR URLs.
+
+FREE MODELS (no credit cost)
+  flux-2-turbo (default), flux-2-klein, hyperflux, flux-dev, seedream-4, seedream-4.5
+
+MORE INFO
+  $ freepik models       Show all models with speed, quality, tier, cost
+  $ freepik templates    Show prompt templates and variables
+  $ freepik credits      Show rate limits and pricing`);
 
   // Register all commands
   registerGenerateCommand(program);

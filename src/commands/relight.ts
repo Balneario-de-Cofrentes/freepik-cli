@@ -18,6 +18,11 @@ export function registerRelightCommand(program: Command): void {
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
     .option('--open', 'Open the file after downloading')
+    .addHelpText('after', `
+Examples:
+  $ freepik relight photo.jpg --prompt "warm golden hour sunlight" -o relit.png
+  $ freepik relight portrait.jpg --prompt "dramatic side lighting, dark background" -o dramatic.png
+  $ freepik relight room.jpg --prompt "soft natural window light" -o bright-room.png`)
     .action(async (image: string, opts: SimpleImageOptions & { open?: boolean }) => {
       try {
         info('Relighting image...');

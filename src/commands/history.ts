@@ -11,6 +11,14 @@ export function registerHistoryCommand(program: Command): void {
     .option('--limit <n>', 'Number of entries to show', '20')
     .option('--search <term>', 'Filter by prompt text')
     .option('--total-cost', 'Show accumulated estimated cost')
+    .addHelpText('after', `
+Examples:
+  $ freepik history
+  $ freepik history --limit 50
+  $ freepik history --search "landscape"
+  $ freepik history --total-cost
+
+Tracks all generations with timestamps, models, prompts, and file paths.`)
     .action(async (opts: HistoryOptions) => {
       try {
         let entries = await readHistory();

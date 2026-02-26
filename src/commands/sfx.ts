@@ -14,6 +14,12 @@ export function registerSfxCommand(program: Command): void {
     .argument('<prompt>', 'Text description of the sound effect (e.g. "door creaking open")')
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
+    .addHelpText('after', `
+Examples:
+  $ freepik sfx "door creaking open slowly" -o creak.mp3
+  $ freepik sfx "laser gun firing, sci-fi" -o laser.mp3
+  $ freepik sfx "rain on window, gentle, ambient" -o rain.mp3
+  $ freepik sfx "crowd cheering in stadium" -o cheer.mp3`)
     .action(async (prompt: string, opts: MusicOptions) => {
       try {
         info(`Generating sound effect: "${prompt}"`);

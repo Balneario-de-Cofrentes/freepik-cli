@@ -10,6 +10,11 @@ export function registerOpenCommand(program: Command): void {
     .description('Open the last generated file or a specific file')
     .argument('[file]', 'File path or URL to open')
     .option('--url', 'Open as URL in browser instead of local file')
+    .addHelpText('after', `
+Examples:
+  $ freepik open                          # Opens the last generated file
+  $ freepik open photo.png                # Opens a specific file
+  $ freepik open https://example.com      # Opens URL in browser (--url)`)
     .action(async (file: string | undefined, opts: OpenOptions) => {
       try {
         if (file) {

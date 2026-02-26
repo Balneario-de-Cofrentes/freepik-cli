@@ -26,6 +26,12 @@ export function registerReimagineCommand(program: Command): void {
     .option('-o, --output <path>', 'Output file path')
     .option('--no-download', 'Skip downloading, just return task info')
     .option('--open', 'Open the file after downloading')
+    .addHelpText('after', `
+Examples:
+  $ freepik reimagine photo.jpg -o reimagined.png
+  $ freepik reimagine photo.jpg --prompt "cyberpunk neon city" --imagination wild -o cyber.png
+  $ freepik reimagine landscape.jpg --prompt "watercolor painting" --imagination vivid -o painted.png
+  $ freepik reimagine photo.jpg --aspect-ratio widescreen_16_9 -o wide.png`)
     .action(async (image: string, opts: ReimagineOptions) => {
       try {
         if (
