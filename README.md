@@ -2,7 +2,6 @@
 
 The missing CLI for the Freepik API. Generate images, videos, icons, music, and more from your terminal.
 
-[![npm version](https://img.shields.io/badge/npm-0.2.0-blue)](https://www.npmjs.com/package/freepik-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js >= 18](https://img.shields.io/badge/Node.js-%3E%3D%2018-brightgreen)](https://nodejs.org/)
 
@@ -10,24 +9,27 @@ The missing CLI for the Freepik API. Generate images, videos, icons, music, and 
 
 | Feature | freepik-cli | Freepik MCP (official) | Direct API (curl/fetch) |
 |---------|------------|----------------------|----------------------|
-| **Setup** | `npm i -g freepik-cli` | MCP server config + JSON | Manual auth headers |
-| **Auth handling** | Auto (config or env var) | Per-server config | Manual every request |
-| **Async task polling** | Automatic (waits + downloads) | Manual (poll yourself) | Manual (poll yourself) |
-| **File download** | Automatic to disk | Returns URLs only | Manual download |
-| **Image input** | Local files or URLs (auto base64) | URLs only | Manual base64 encoding |
-| **Batch operations** | `--count N` or `batch manifest.json` | One at a time | Build your own |
-| **Model selection** | `--smart` auto-picks best | Choose manually | Choose manually |
+| **API coverage** | 23 commands (all endpoints) | 4 tools (Mystic, icons, resources, classify) | All endpoints (manual) |
+| **Image models** | 11 models with named aliases | Mystic only | All (raw endpoint paths) |
+| **Video generation** | 5 models (Kling, Hailuo, Wan) | Not supported | All (manual polling) |
+| **Audio** | Music + sound effects | Not supported | All (manual polling) |
+| **Image editing** | Upscale, remove-bg, expand, relight, style-transfer | Not supported | All (manual polling) |
+| **Setup** | `git clone` + `pnpm link` | MCP server config + uv | Manual auth headers |
+| **Auth handling** | Auto (config or env var) | Env var per server | Manual every request |
+| **Async task polling** | Automatic (waits + downloads) | Handled by MCP for Mystic | Manual (build your own) |
+| **File download** | Automatic to disk | Returns URLs (agent decides) | Manual download |
+| **Image input** | Local files or URLs (auto base64) | Depends on agent | Manual base64 encoding |
+| **Batch operations** | `--count N` or `batch manifest.json` | One call at a time | Build your own |
+| **Smart model selection** | `--smart` auto-picks best model | N/A (Mystic only) | N/A |
 | **Prompt templates** | 7 built-in templates | None | None |
 | **Cost tracking** | `freepik history --total-cost` | None | None |
 | **Rate limit visibility** | `freepik credits` | None | Parse headers yourself |
-| **JSON output for agents** | `--json` flag on every command | Native JSON | Native JSON |
-| **Offline background removal** | `--local` flag (uses rembg) | Not available | Not available |
-| **Error messages** | Human-readable with suggestions | Raw API errors | Raw API errors |
-| **11 image models** | Named aliases (e.g. `mystic`) | Raw endpoint paths | Raw endpoint paths |
-| **5 video models** | Named aliases | Raw endpoint paths | Raw endpoint paths |
-| **Progress indicator** | Built-in spinner | None | None |
-| **Zero runtime dependencies** | Only Commander.js | Varies | N/A |
+| **JSON output** | `--json` flag on every command | Native (structured MCP responses) | Native JSON |
+| **Offline bg removal** | `--local` flag (uses rembg) | Not available | Not available |
+| **Error messages** | Human-readable with suggestions | Structured MCP errors | Raw API errors |
+| **Progress indicator** | Built-in spinner | N/A (async MCP) | None |
 | **Works without MCP** | Yes (standalone CLI) | Requires MCP runtime | Yes |
+| **Icon/resource search** | `freepik search` | Native (icons + resources) | Manual |
 
 ## Features
 
@@ -49,22 +51,6 @@ The missing CLI for the Freepik API. Generate images, videos, icons, music, and 
 
 ## Installation
 
-### Quick Try (No Install)
-
-```bash
-npx freepik-cli --help
-```
-
-### Global Install
-
-```bash
-npm install -g freepik-cli
-# or
-pnpm add -g freepik-cli
-```
-
-The first run triggers interactive setup to store your API key.
-
 ### From Source
 
 ```bash
@@ -74,6 +60,8 @@ pnpm install
 pnpm build
 pnpm link --global
 ```
+
+The first run triggers interactive setup to store your API key.
 
 ## Quick Start
 
