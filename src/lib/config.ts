@@ -21,7 +21,7 @@ export async function loadConfig(): Promise<CliConfig> {
 
 export async function saveConfig(config: CliConfig): Promise<void> {
   await ensureConfigDir();
-  await writeFile(CONFIG_FILE, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  await writeFile(CONFIG_FILE, JSON.stringify(config, null, 2) + '\n', { encoding: 'utf-8', mode: 0o600 });
 }
 
 export async function getApiKey(): Promise<string> {
